@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "PaymentEntry": {
+      "title": "PaymentEntry",
+      "description": "Catatan transaksi pembayaran atau cicilan jasa parkir",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifier unik pembayaran"
+        },
+        "tanggal": {
+          "type": "string",
+          "description": "Tanggal pembayaran (YYYY-MM-DD)"
+        },
+        "jumlah": {
+          "type": "number",
+          "description": "Nominal pembayaran"
+        },
+        "catatan": {
+          "type": "string",
+          "description": "Catatan pembayaran"
+        }
+      },
+      "required": ["id", "tanggal", "jumlah"]
+    },
+    "MotorUnit": {
+      "title": "MotorUnit",
+      "description": "Data unit kendaraan titipan/gadai motor",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifier unik unit motor"
+        },
+        "no_struk": {
+          "type": "string",
+          "description": "Nomor struk transaksi"
+        },
+        "tanggal_masuk": {
+          "type": "string",
+          "description": "Tanggal masuk unit motor (YYYY-MM-DD)"
+        },
+        "jenis_motor": {
+          "type": "string",
+          "description": "Merk dan tipe motor"
+        },
+        "nama_pemilik": {
+          "type": "string",
+          "description": "Nama pemilik kendaraan (huruf besar semua)"
+        },
+        "no_whatsapp": {
+          "type": "string",
+          "description": "Nomor WhatsApp pemilik"
+        },
+        "tahun": {
+          "type": "number",
+          "description": "Tahun perakitan kendaraan"
+        },
+        "nopol": {
+          "type": "string",
+          "description": "Nomor polisi kendaraan"
+        },
+        "jasa_parkir": {
+          "type": "number",
+          "description": "Tarif jasa parkir per hari"
+        },
+        "nominal_pokok": {
+          "type": "number",
+          "description": "Nominal pokok pinjaman/uang muka"
+        },
+        "pemilik_dana": {
+          "type": "string",
+          "description": "Sumber modal/pemilik dana"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Parkir", "Lelang", "Lunas"],
+          "description": "Status operasional unit"
+        },
+        "tanggal_lunas": {
+          "type": "string",
+          "description": "Waktu pelunasan unit"
+        },
+        "catatan": {
+          "type": "string",
+          "description": "Catatan kelengkapan motor"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Waktu pembuatan data ISO"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Waktu pembaruan data ISO"
+        }
+      },
+      "required": ["id", "tanggal_masuk", "jenis_motor", "nama_pemilik", "nopol", "status"]
+    }
+  },
+  "firestore": {
+    "/units/{unitId}": {
+      "schema": "MotorUnit",
+      "description": "Koleksi data unit motor titipan dan gadai tersinkronisasi real-time"
+    },
+    "/deleted_units/{unitId}": {
+      "description": "Koleksi ID unit motor yang telah dihapus permanen agar tidak muncul kembali"
+    },
+    "/metadata/{metaId}": {
+      "description": "Metadata sistem dan status inisialisasi aplikasi"
+    }
+  }
+}

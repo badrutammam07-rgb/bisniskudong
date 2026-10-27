@@ -1,0 +1,7 @@
+{
+  "name": "Motorku - Manajemen Parkir & Gadai Motor",
+  "description": "Aplikasi manajemen penitipan dan gadai motor dengan perhitungan otomatis jasa parkir, status lelang, pencatatan pemasukan bertanggal, dan kirim struk WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
