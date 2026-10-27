@@ -47,9 +47,7 @@ Kepada Yth.
 *(Nominal Pokok + Jasa Parkir Belum Bayar)*
 ================================
 
-*Status Unit:* ${unit.display_status.toUpperCase()}
-
-_Harap simpan struk ini sebagai bukti pembayaran dan transaksi yang sah. Untuk info penebusan silakan hubungi kami._`;
+*Status Unit:* ${unit.display_status.toUpperCase()}`;
 
   return text;
 }

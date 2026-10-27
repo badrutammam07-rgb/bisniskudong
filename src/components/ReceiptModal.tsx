@@ -155,12 +155,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
 
             {/* Footer Struk */}
-            <div className="pt-3 text-center space-y-1">
+            <div className="pt-3 text-center">
               <div className="text-[10px] font-bold text-slate-800">
                 Status: {unit.display_status.toUpperCase()}
-              </div>
-              <div className="text-[9px] text-slate-500">
-                Simpan struk ini sebagai bukti transaksi resmi.
               </div>
             </div>
           </div>
