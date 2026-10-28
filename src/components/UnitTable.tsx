@@ -13,6 +13,7 @@ import {
   Archive,
   BellRing,
   Clock,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface UnitTableProps {
@@ -84,7 +85,9 @@ export const UnitTable: React.FC<UnitTableProps> = ({
         const matchNama = unit.nama_pemilik.toLowerCase().includes(q);
         const matchMotor = unit.jenis_motor.toLowerCase().includes(q);
         const matchStruk = (unit.no_struk || '').toLowerCase().includes(q);
-        return matchNopol || matchNama || matchMotor || matchStruk;
+        const matchNik = (unit.nik || '').toLowerCase().includes(q);
+        const matchAlamat = (unit.alamat || '').toLowerCase().includes(q);
+        return matchNopol || matchNama || matchMotor || matchStruk || matchNik || matchAlamat;
       }
 
       return true;
@@ -255,7 +258,7 @@ export const UnitTable: React.FC<UnitTableProps> = ({
             <tr className="bg-slate-900/90 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
               <th className="py-3 px-4">Struk &amp; Masuk</th>
               <th className="py-3 px-4">Unit Motor</th>
-              <th className="py-3 px-4">Pemilik &amp; WA</th>
+              <th className="py-3 px-4">Penggadai &amp; Kontak</th>
               <th className="py-3 px-4">Pemilik Dana</th>
               <th className="py-3 px-3 text-center">Hari</th>
               <th className="py-3 px-3 text-center">Jatuh Tempo</th>
@@ -357,11 +360,22 @@ export const UnitTable: React.FC<UnitTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Pemilik & WhatsApp */}
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-200 whitespace-nowrap">
+                    {/* Penggadai (Nama, NIK, Alamat & WhatsApp) */}
+                    <td className="py-3 px-4 min-w-[170px]">
+                      <div className="font-semibold text-slate-100 whitespace-nowrap">
                         {unit.nama_pemilik}
                       </div>
+                      {unit.nik && (
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                          <span className="text-slate-500 font-medium">NIK:</span>
+                          <span>{unit.nik}</span>
+                        </div>
+                      )}
+                      {unit.alamat && (
+                        <div className="text-[10px] text-slate-400 truncate max-w-[190px] mt-0.5" title={unit.alamat}>
+                          {unit.alamat}
+                        </div>
+                      )}
                       {unit.no_whatsapp ? (
                         <a
                           href={`https://wa.me/${waClean}`}
@@ -492,14 +506,14 @@ export const UnitTable: React.FC<UnitTableProps> = ({
                     {/* Aksi */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
-                        {/* Tombol Struk WA */}
+                        {/* Tombol Foto Struk WA */}
                         <button
                           onClick={() => onOpenReceipt(unit)}
-                          title="Lihat struk & kirim WhatsApp (tanpa pemilik modal)"
+                          title="Lihat & kirim foto struk ke WhatsApp"
                           className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 rounded-lg transition-colors cursor-pointer"
                         >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Struk WA</span>
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>Foto Struk</span>
                         </button>
 
                         {/* Tombol Lunas */}

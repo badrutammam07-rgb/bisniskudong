@@ -1,4 +1,4 @@
-import { MotorUnit } from '../types/motor';
+import { MotorUnit, Penggadai } from '../types/motor';
 import { toISODateString } from './calculations';
 
 // Generate sample seed data relative to current date
@@ -35,6 +35,8 @@ export function getInitialSeedData(): MotorUnit[] {
       tanggal_masuk: toISODateString(dH2),
       jenis_motor: 'Honda Vario 160 CBS',
       nama_pemilik: 'BUDI SANTOSO',
+      nik: '3171012304850001',
+      alamat: 'Jl. Melati No. 12, Kebayoran Baru, Jakarta Selatan',
       no_whatsapp: '081234567890',
       tahun: 2023,
       nopol: 'B 3456 KLT',
@@ -60,6 +62,8 @@ export function getInitialSeedData(): MotorUnit[] {
       tanggal_masuk: toISODateString(d12),
       jenis_motor: 'Honda Scoopy Prestige',
       nama_pemilik: 'DEWI LESTARI',
+      nik: '3275026708920003',
+      alamat: 'Jl. Mawar No. 8B, Bekasi Barat',
       no_whatsapp: '081298765432',
       tahun: 2023,
       nopol: 'B 4821 SYZ',
@@ -78,6 +82,8 @@ export function getInitialSeedData(): MotorUnit[] {
       tanggal_masuk: toISODateString(d20),
       jenis_motor: 'Yamaha Aerox 155 VVA',
       nama_pemilik: 'RIAN ARDIANSYAH',
+      nik: '3174091501950002',
+      alamat: 'Jl. Kemang Timur No. 45, Jakarta Selatan',
       no_whatsapp: '081988776655',
       tahun: 2022,
       nopol: 'B 1289 EFG',
@@ -103,6 +109,8 @@ export function getInitialSeedData(): MotorUnit[] {
       tanggal_masuk: toISODateString(d100),
       jenis_motor: 'Yamaha NMAX 155 Connected',
       nama_pemilik: 'AGUS SETIAWAN',
+      nik: '3273010511880004',
+      alamat: 'Jl. Cihampelas No. 102, Bandung',
       no_whatsapp: '085711223344',
       tahun: 2022,
       nopol: 'D 6789 ZX',
@@ -121,6 +129,8 @@ export function getInitialSeedData(): MotorUnit[] {
       tanggal_masuk: toISODateString(dLunasMasuk),
       jenis_motor: 'Vespa Sprint 150 i-Get ABS',
       nama_pemilik: 'DONI PRASETYO',
+      nik: '3172051806900005',
+      alamat: 'Jl. Pluit Raya No. 19, Jakarta Utara',
       no_whatsapp: '081399881122',
       tahun: 2023,
       nopol: 'B 5500 VSP',
@@ -280,4 +290,86 @@ export function resetToSeedData(): MotorUnit[] {
   const initial = getInitialSeedData();
   saveUnits(initial);
   return initial;
+}
+
+const PENGGADAI_STORAGE_KEY = 'motorku_penggadai_v1';
+
+export function getInitialSeedPenggadai(): Penggadai[] {
+  return [
+    {
+      id: 'pgd-3171012304850001',
+      nama: 'BUDI SANTOSO',
+      nik: '3171012304850001',
+      alamat: 'Jl. Melati No. 12, Kebayoran Baru, Jakarta Selatan',
+      no_whatsapp: '081234567890',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'pgd-3275026708920003',
+      nama: 'DEWI LESTARI',
+      nik: '3275026708920003',
+      alamat: 'Jl. Mawar No. 8B, Bekasi Barat',
+      no_whatsapp: '081298765432',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'pgd-3174091501950002',
+      nama: 'RIAN ARDIANSYAH',
+      nik: '3174091501950002',
+      alamat: 'Jl. Kemang Timur No. 45, Jakarta Selatan',
+      no_whatsapp: '081988776655',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'pgd-3273010511880004',
+      nama: 'AGUS SETIAWAN',
+      nik: '3273010511880004',
+      alamat: 'Jl. Cihampelas No. 102, Bandung',
+      no_whatsapp: '085711223344',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'pgd-3172051806900005',
+      nama: 'DONI PRASETYO',
+      nik: '3172051806900005',
+      alamat: 'Jl. Pluit Raya No. 19, Jakarta Utara',
+      no_whatsapp: '081399881122',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ];
+}
+
+export function loadPenggadai(): Penggadai[] {
+  try {
+    const raw = localStorage.getItem(PENGGADAI_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((p) => ({
+          ...p,
+          nama: (p.nama || '').toUpperCase().trim(),
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('Gagal membaca data penggadai lokal:', err);
+  }
+  return [];
+}
+
+export function savePenggadai(list: Penggadai[]): void {
+  try {
+    const cleaned = list.map((p) => ({
+      ...p,
+      nama: (p.nama || '').toUpperCase().trim(),
+    }));
+    localStorage.setItem(PENGGADAI_STORAGE_KEY, JSON.stringify(cleaned));
+  } catch (err) {
+    console.warn('Gagal menyimpan data penggadai lokal:', err);
+  }
 }

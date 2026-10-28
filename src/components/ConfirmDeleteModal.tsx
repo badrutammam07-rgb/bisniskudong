@@ -46,8 +46,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <div className="leading-snug">
-                <strong>Penghapusan Permanen:</strong> Data yang sudah dihapus akan langsung hilang
-                dari database Firestore dan tidak akan muncul kembali meskipun data sampel bawaan.
+                <strong>Penghapusan Unit:</strong> Unit motor akan dihapus dari database. Data penggadai ({unit.nama_pemilik}) tetap tersimpan aman di direktori penggadai untuk kemudahan gadai kembali.
               </div>
             </div>
           </div>

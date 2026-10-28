@@ -13,12 +13,24 @@ export interface PaymentEntry {
   catatan?: string;
 }
 
+export interface Penggadai {
+  id: string;
+  nama: string; // HURUF BESAR SEMUA
+  nik: string;
+  alamat: string;
+  no_whatsapp: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MotorUnit {
   id: string;
   no_struk: string;
   tanggal_masuk: string; // YYYY-MM-DD
   jenis_motor: string;
-  nama_pemilik: string;
+  nama_pemilik: string; // Nama Penggadai (HURUF BESAR SEMUA)
+  nik?: string; // NIK KTP Penggadai
+  alamat?: string; // Alamat Penggadai
   no_whatsapp: string;
   tahun: number;
   nopol: string;

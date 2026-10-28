@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { MotorUnit, PemilikDana } from '../types/motor';
-import { X, Calendar, User, Phone, FileText, DollarSign } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { MotorUnit, PemilikDana, Penggadai } from '../types/motor';
+import { X, Calendar, User, Phone, FileText, DollarSign, CreditCard, MapPin, Search, CheckCircle2, UserPlus, Sparkles } from 'lucide-react';
 import { toISODateString, formatNominalInput, parseNominalInput } from '../utils/calculations';
 
 interface AddUnitModalProps {
@@ -8,6 +8,8 @@ interface AddUnitModalProps {
   onClose: () => void;
   onAddUnit: (unit: MotorUnit) => void;
   existingCount: number;
+  penggadaiList?: Penggadai[];
+  preselectedPenggadai?: Penggadai | null;
 }
 
 export const AddUnitModal: React.FC<AddUnitModalProps> = ({
@@ -15,6 +17,8 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
   onClose,
   onAddUnit,
   existingCount,
+  penggadaiList = [],
+  preselectedPenggadai = null,
 }) => {
   const now = new Date();
   const todayStr = toISODateString(now);
@@ -27,8 +31,18 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
   const [jenisMotor, setJenisMotor] = useState('');
   const [tahun, setTahun] = useState<number>(currentYear);
   const [nopol, setNopol] = useState('');
+
+  // Data Penggadai
   const [namaPemilik, setNamaPemilik] = useState('');
+  const [nik, setNik] = useState('');
+  const [alamat, setAlamat] = useState('');
   const [noWhatsapp, setNoWhatsapp] = useState('');
+
+  // Mode Penggadai
+  const [selectedPenggadaiId, setSelectedPenggadaiId] = useState<string>('');
+  const [searchPenggadaiQuery, setSearchPenggadaiQuery] = useState('');
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
+
   const [noStruk, setNoStruk] = useState(defaultStruk);
   const [jasaParkirText, setJasaParkirText] = useState('5.000');
   const [nominalPokokText, setNominalPokokText] = useState('3.000.000');
@@ -37,17 +51,75 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
   const [isCustomPemilik, setIsCustomPemilik] = useState(false);
   const [catatan, setCatatan] = useState('');
 
+  // Sinkronkan preselected penggadai jika dibuka dari direktori
+  useEffect(() => {
+    if (preselectedPenggadai) {
+      applyPenggadai(preselectedPenggadai);
+    } else {
+      resetPenggadaiFields();
+    }
+  }, [preselectedPenggadai, isOpen]);
+
+  const applyPenggadai = (p: Penggadai) => {
+    setSelectedPenggadaiId(p.id);
+    setNamaPemilik(p.nama.toUpperCase());
+    setNik(p.nik || '');
+    setAlamat(p.alamat || '');
+    setNoWhatsapp(p.no_whatsapp || '');
+    setIsAutoFilled(true);
+  };
+
+  const resetPenggadaiFields = () => {
+    setSelectedPenggadaiId('');
+    setNamaPemilik('');
+    setNik('');
+    setAlamat('');
+    setNoWhatsapp('');
+    setIsAutoFilled(false);
+    setSearchPenggadaiQuery('');
+  };
+
+  // Filter daftar penggadai terdaftar untuk autocomplete / pencarian cepat
+  const filteredExistingPenggadai = useMemo(() => {
+    if (!searchPenggadaiQuery.trim()) return penggadaiList.slice(0, 6);
+    const q = searchPenggadaiQuery.toLowerCase();
+    return penggadaiList.filter((p) => {
+      const matchNama = (p.nama || '').toLowerCase().includes(q);
+      const matchNik = (p.nik || '').toLowerCase().includes(q);
+      const matchWa = (p.no_whatsapp || '').toLowerCase().includes(q);
+      return matchNama || matchNik || matchWa;
+    });
+  }, [penggadaiList, searchPenggadaiQuery]);
+
+  // Cek jika NIK atau Nama yang diketik cocok persis dengan yang sudah terdaftar
+  const handleNikChange = (val: string) => {
+    const cleanDigits = val.replace(/\D/g, '').slice(0, 16);
+    setNik(cleanDigits);
+
+    // Cari otomatis jika NIK lengkap cocok
+    if (cleanDigits.length >= 12) {
+      const found = penggadaiList.find((p) => (p.nik || '').replace(/\D/g, '') === cleanDigits);
+      if (found && found.id !== selectedPenggadaiId) {
+        applyPenggadai(found);
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!jenisMotor.trim() || !namaPemilik.trim() || !nopol.trim()) {
-      alert('Mohon lengkapi jenis motor, nama pemilik, dan nomor polisi.');
+    if (!namaPemilik.trim()) {
+      alert('Mohon masukkan Nama Penggadai.');
+      return;
+    }
+    if (!jenisMotor.trim() || !nopol.trim()) {
+      alert('Mohon lengkapi jenis motor dan nomor polisi kendaraan.');
       return;
     }
 
-    const finalPemilikDana = isCustomPemilik ? (customPemilikDana.trim() || 'Pribadi') : pemilikDana;
+    const finalPemilikDana = isCustomPemilik ? customPemilikDana.trim() || 'Pribadi' : pemilikDana;
 
     const newUnit: MotorUnit = {
       id: 'unit-' + Date.now(),
@@ -57,6 +129,8 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
       tahun: Number(tahun) || currentYear,
       nopol: nopol.trim().toUpperCase(),
       nama_pemilik: namaPemilik.trim().toUpperCase(),
+      nik: nik.trim(),
+      alamat: alamat.trim(),
       no_whatsapp: noWhatsapp.trim(),
       jasa_parkir: parseNominalInput(jasaParkirText),
       nominal_pokok: parseNominalInput(nominalPokokText),
@@ -79,10 +153,10 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-900/60 shrink-0">
           <div className="min-w-0 pr-2">
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span className="gold-gradient-text truncate">Input Data Unit Baru</span>
+              <span className="gold-gradient-text truncate">Input Data Unit Gadai Baru</span>
             </h2>
             <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate">
-              Informasi kendaraan, pemilik &amp; tanggal masuk
+              Data penggadai otomatis tersimpan permanen di database
             </p>
           </div>
           <button
@@ -95,224 +169,352 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto">
-          {/* Baris 1: Tanggal Masuk & No Struk */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Tanggal Masuk <span className="text-amber-400">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  required
-                  value={tanggalMasuk}
-                  onChange={(e) => setTanggalMasuk(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
-                />
-                <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+          {/* SECTION 1: DATA PENGGADAI */}
+          <div className="p-4 bg-slate-900/80 border border-amber-500/25 rounded-xl space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+              <div className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                <User className="w-4 h-4 text-amber-400" />
+                <span>Data Penggadai (Nasabah)</span>
               </div>
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                Jatuh tempo otomatis berulang setiap tanggal {tanggalMasuk ? new Date(tanggalMasuk).getDate() : '-'} setiap bulan (pengingat H-2).
-              </span>
+              {penggadaiList.length > 0 && (
+                <span className="text-[11px] text-slate-400">
+                  {penggadaiList.length} Penggadai Terdaftar di Database
+                </span>
+              )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nomor Struk
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={noStruk}
-                  onChange={(e) => setNoStruk(e.target.value)}
-                  placeholder="MK-2024-001"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers uppercase"
-                />
-                <FileText className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
-              </div>
-              <span className="text-[11px] text-slate-500 mt-1 block">
-                Nomor struk otomatis sesuai urutan transaksi.
-              </span>
-            </div>
-          </div>
-
-          {/* Baris 2: Nama Pemilik & Nomor WhatsApp */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nama Pemilik <span className="text-amber-400">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={namaPemilik}
-                  onChange={(e) => setNamaPemilik(e.target.value.toUpperCase())}
-                  placeholder="Contoh: BUDI SANTOSO"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden uppercase font-semibold tracking-wide"
-                />
-                <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nomor WhatsApp <span className="text-slate-500">(untuk kirim struk &amp; pengingat)</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={noWhatsapp}
-                  onChange={(e) => setNoWhatsapp(e.target.value)}
-                  placeholder="081234567890"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
-                />
-                <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-
-          {/* Baris 3: Jenis Motor, Tahun, Nopol */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Jenis / Tipe Motor <span className="text-amber-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={jenisMotor}
-                onChange={(e) => setJenisMotor(e.target.value)}
-                placeholder="Contoh: Honda Vario 160"
-                className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Tahun
-              </label>
-              <input
-                type="number"
-                min="1990"
-                max="2035"
-                value={tahun}
-                onChange={(e) => setTahun(parseInt(e.target.value) || currentYear)}
-                className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nomor Polisi (Nopol) <span className="text-amber-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={nopol}
-                onChange={(e) => setNopol(e.target.value)}
-                placeholder="B 1234 ABC"
-                className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white font-bold font-mono tracking-wider focus:ring-2 focus:ring-amber-400 outline-hidden uppercase"
-              />
-            </div>
-          </div>
-
-          {/* Baris 4: Finansial & Pemilik Dana */}
-          <div className="p-4 bg-slate-900/80 border border-amber-500/20 rounded-xl space-y-4">
-            <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-              <DollarSign className="w-4 h-4" />
-              <span>Finansial &amp; Kepemilikan Dana</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Nominal Pokok (Rp) <span className="text-amber-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  required
-                  value={nominalPokokText}
-                  onChange={(e) => setNominalPokokText(formatNominalInput(e.target.value))}
-                  placeholder="3.000.000"
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-amber-300 font-bold focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Jasa Parkir / Hari (Rp) <span className="text-amber-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  required
-                  value={jasaParkirText}
-                  onChange={(e) => setJasaParkirText(formatNominalInput(e.target.value))}
-                  placeholder="5.000"
-                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Pemilik Dana <span className="text-amber-400">*</span>
-                </label>
-                {!isCustomPemilik ? (
-                  <select
-                    value={pemilikDana}
-                    onChange={(e) => {
-                      if (e.target.value === 'custom') {
-                        setIsCustomPemilik(true);
-                      } else {
-                        setPemilikDana(e.target.value);
-                      }
-                    }}
-                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
-                  >
-                    <option value="Pribadi">Pribadi</option>
-                    <option value="Mamah">Mamah</option>
-                    <option value="Pecel">Pecel</option>
-                    <option value="custom">+ Pemilik Lainnya...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-1.5">
-                    <input
-                      type="text"
-                      placeholder="Nama Pemilik Dana"
-                      value={customPemilikDana}
-                      onChange={(e) => setCustomPemilikDana(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
-                    />
+            {/* Quick Picker dari Penggadai Terdaftar */}
+            {penggadaiList.length > 0 && (
+              <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Pilih Penggadai Terdaftar (Otomatis Isi Data)</span>
+                  </label>
+                  {isAutoFilled && (
                     <button
                       type="button"
-                      onClick={() => setIsCustomPemilik(false)}
-                      className="px-2 py-1 text-xs border border-slate-700 rounded-lg hover:bg-slate-800"
+                      onClick={resetPenggadaiFields}
+                      className="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
                     >
-                      Batal
+                      + Input Penggadai Baru
                     </button>
-                  </div>
-                )}
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  (Dirahasiakan dari struk WhatsApp)
+                  )}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchPenggadaiQuery}
+                    onChange={(e) => setSearchPenggadaiQuery(e.target.value)}
+                    placeholder="Ketik Nama / NIK / No. WA untuk cari penggadai lama..."
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:ring-1 focus:ring-amber-400 outline-hidden"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2 pointer-events-none" />
+                </div>
+
+                {/* Chips pilihan cepat penggadai */}
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
+                  {filteredExistingPenggadai.map((p) => {
+                    const isSelected = selectedPenggadaiId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => applyPenggadai(p)}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all text-left flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 font-bold shadow-sm'
+                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 hover:border-amber-500/40'
+                        }`}
+                      >
+                        {isSelected && <CheckCircle2 className="w-3 h-3 text-slate-950" />}
+                        <span>{p.nama}</span>
+                        {p.nik && <span className="text-[10px] opacity-70">({p.nik.slice(-4)})</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Banner data terisi otomatis */}
+            {isAutoFilled && (
+              <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <strong>Data Penggadai Terisi Otomatis:</strong> Anda tidak perlu mengetik ulang data pribadi. Cukup masukkan data unit motor di bawah.
+                </span>
+              </div>
+            )}
+
+            {/* Input Baris 1: Nama Penggadai & NIK */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nama Penggadai <span className="text-amber-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={namaPemilik}
+                    onChange={(e) => {
+                      setNamaPemilik(e.target.value.toUpperCase());
+                      setIsAutoFilled(false);
+                    }}
+                    placeholder="NAMA LENGKAP PENGGADAI"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden uppercase font-semibold tracking-wide"
+                  />
+                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nomor Induk Kependudukan (NIK KTP)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={16}
+                    value={nik}
+                    onChange={(e) => handleNikChange(e.target.value)}
+                    placeholder="16 Digit NIK KTP (Contoh: 31710123...)"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono tracking-wider"
+                  />
+                  <CreditCard className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Input Baris 2: Alamat & WhatsApp */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Alamat Penggadai
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={alamat}
+                    onChange={(e) => setAlamat(e.target.value)}
+                    placeholder="Contoh: Jl. Melati No. 12, RT 02/05, Jakarta"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
+                  />
+                  <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nomor WhatsApp
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={noWhatsapp}
+                    onChange={(e) => setNoWhatsapp(e.target.value)}
+                    placeholder="081234567890"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
+                  />
+                  <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: DATA KENDARAAN (UNIT MOTOR) */}
+          <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+            <div className="text-xs font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-2">
+              <FileText className="w-4 h-4 text-amber-400" />
+              <span>Data Kendaraan &amp; Transaksi Unit</span>
+            </div>
+
+            {/* Baris 1: Tanggal Masuk & No Struk */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Tanggal Masuk <span className="text-amber-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    required
+                    value={tanggalMasuk}
+                    onChange={(e) => setTanggalMasuk(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
+                  />
+                  <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Jatuh tempo otomatis berulang setiap tanggal {tanggalMasuk ? new Date(tanggalMasuk).getDate() : '-'} setiap bulan (pengingat H-2).
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nomor Struk
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={noStruk}
+                    onChange={(e) => setNoStruk(e.target.value)}
+                    placeholder="MK-2024-001"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers uppercase"
+                  />
+                  <FileText className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Nomor struk otomatis sesuai urutan transaksi.
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Baris 5: Catatan Kelengkapan */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Catatan &amp; Kelengkapan Unit
-            </label>
-            <textarea
-              rows={2}
-              value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Kunci kontak 2 pcs, STNK asli, helm titipan."
-              className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
-            />
+            {/* Baris 2: Jenis Motor, Tahun, Nopol */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Jenis / Tipe Motor <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={jenisMotor}
+                  onChange={(e) => setJenisMotor(e.target.value)}
+                  placeholder="Contoh: Honda Vario 160"
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Tahun
+                </label>
+                <input
+                  type="number"
+                  min="1990"
+                  max="2035"
+                  value={tahun}
+                  onChange={(e) => setTahun(parseInt(e.target.value) || currentYear)}
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nomor Polisi (Nopol) <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={nopol}
+                  onChange={(e) => setNopol(e.target.value)}
+                  placeholder="B 1234 ABC"
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white font-bold font-mono tracking-wider focus:ring-2 focus:ring-amber-400 outline-hidden uppercase"
+                />
+              </div>
+            </div>
+
+            {/* Baris 3: Finansial & Pemilik Dana */}
+            <div className="p-3.5 bg-slate-950/70 border border-amber-500/20 rounded-xl space-y-3">
+              <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4" />
+                <span>Finansial &amp; Kepemilikan Dana</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Nominal Pokok (Rp) <span className="text-amber-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={nominalPokokText}
+                    onChange={(e) => setNominalPokokText(formatNominalInput(e.target.value))}
+                    placeholder="3.000.000"
+                    className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-amber-300 font-bold focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Jasa Parkir / Hari (Rp) <span className="text-amber-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={jasaParkirText}
+                    onChange={(e) => setJasaParkirText(formatNominalInput(e.target.value))}
+                    placeholder="5.000"
+                    className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Pemilik Dana <span className="text-amber-400">*</span>
+                  </label>
+                  {!isCustomPemilik ? (
+                    <select
+                      value={pemilikDana}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setIsCustomPemilik(true);
+                        } else {
+                          setPemilikDana(e.target.value);
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
+                    >
+                      <option value="Pribadi">Pribadi</option>
+                      <option value="Mamah">Mamah</option>
+                      <option value="Pecel">Pecel</option>
+                      <option value="custom">+ Pemilik Lainnya...</option>
+                    </select>
+                  ) : (
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Nama Pemilik Dana"
+                        value={customPemilikDana}
+                        onChange={(e) => setCustomPemilikDana(e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomPemilik(false)}
+                        className="px-2 py-1 text-xs border border-slate-700 rounded-lg hover:bg-slate-800"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  )}
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    (Dirahasiakan dari struk WhatsApp)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Baris 4: Catatan Kelengkapan */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Catatan &amp; Kelengkapan Unit
+              </label>
+              <textarea
+                rows={2}
+                value={catatan}
+                onChange={(e) => setCatatan(e.target.value)}
+                placeholder="Kunci kontak 2 pcs, STNK asli, helm titipan."
+                className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
+              />
+            </div>
           </div>
 
           {/* Footer Actions */}

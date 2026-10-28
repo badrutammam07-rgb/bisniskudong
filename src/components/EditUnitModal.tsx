@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MotorUnit, PemilikDana, UnitStatus } from '../types/motor';
-import { X, Calendar, User, Phone, FileText, DollarSign } from 'lucide-react';
+import { X, Calendar, User, Phone, FileText, DollarSign, CreditCard, MapPin } from 'lucide-react';
 import { formatNominalInput, parseNominalInput } from '../utils/calculations';
 
 interface EditUnitModalProps {
@@ -21,6 +21,8 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
   const [tahun, setTahun] = useState<number>(2023);
   const [nopol, setNopol] = useState('');
   const [namaPemilik, setNamaPemilik] = useState('');
+  const [nik, setNik] = useState('');
+  const [alamat, setAlamat] = useState('');
   const [noWhatsapp, setNoWhatsapp] = useState('');
   const [noStruk, setNoStruk] = useState('');
   const [jasaParkirText, setJasaParkirText] = useState('');
@@ -38,6 +40,8 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
       setTahun(unit.tahun || 2023);
       setNopol((unit.nopol || '').toUpperCase());
       setNamaPemilik((unit.nama_pemilik || '').toUpperCase());
+      setNik(unit.nik || '');
+      setAlamat(unit.alamat || '');
       setNoWhatsapp(unit.no_whatsapp || '');
       setNoStruk(unit.no_struk || '');
       setJasaParkirText(formatNominalInput(unit.jasa_parkir || 0));
@@ -61,7 +65,7 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
     e.preventDefault();
 
     if (!jenisMotor.trim() || !namaPemilik.trim() || !nopol.trim()) {
-      alert('Mohon lengkapi jenis motor, nama pemilik, dan nomor polisi.');
+      alert('Mohon lengkapi jenis motor, nama penggadai, dan nomor polisi.');
       return;
     }
 
@@ -75,6 +79,8 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
       tahun: Number(tahun) || 2023,
       nopol: nopol.trim().toUpperCase(),
       nama_pemilik: namaPemilik.trim().toUpperCase(),
+      nik: nik.trim(),
+      alamat: alamat.trim(),
       no_whatsapp: noWhatsapp.trim(),
       jasa_parkir: parseNominalInput(jasaParkirText),
       nominal_pokok: parseNominalInput(nominalPokokText),
@@ -151,37 +157,80 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
             </div>
           </div>
 
-          {/* Baris 2: Nama Pemilik & Nomor WhatsApp */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nama Pemilik <span className="text-amber-400">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={namaPemilik}
-                  onChange={(e) => setNamaPemilik(e.target.value.toUpperCase())}
-                  placeholder="NAMA LENGKAP PEMILIK"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden uppercase font-semibold tracking-wide"
-                />
-                <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+          {/* Baris 2: Data Penggadai (Nama, NIK, Alamat, WA) */}
+          <div className="p-4 bg-slate-900/80 border border-slate-700/80 rounded-xl space-y-3.5">
+            <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+              <User className="w-4 h-4 text-amber-400" />
+              <span>Identitas Penggadai</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nama Penggadai <span className="text-amber-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={namaPemilik}
+                    onChange={(e) => setNamaPemilik(e.target.value.toUpperCase())}
+                    placeholder="NAMA LENGKAP PENGGADAI"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden uppercase font-semibold tracking-wide"
+                  />
+                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nomor Induk Kependudukan (NIK KTP)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={16}
+                    value={nik}
+                    onChange={(e) => setNik(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                    placeholder="16 Digit NIK KTP"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono tracking-wider"
+                  />
+                  <CreditCard className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nomor WhatsApp
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={noWhatsapp}
-                  onChange={(e) => setNoWhatsapp(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
-                />
-                <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Alamat Penggadai
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={alamat}
+                    onChange={(e) => setAlamat(e.target.value)}
+                    placeholder="Contoh: Jl. Melati No. 12"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden"
+                  />
+                  <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nomor WhatsApp
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={noWhatsapp}
+                    onChange={(e) => setNoWhatsapp(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-mono-numbers"
+                  />
+                  <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                </div>
               </div>
             </div>
           </div>

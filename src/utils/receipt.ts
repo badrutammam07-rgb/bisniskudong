@@ -26,8 +26,8 @@ No. Struk: ${unit.no_struk || '-'}
 Tanggal: ${tglCetak}
 
 Kepada Yth.
-*Nama Pemilik:* ${unit.nama_pemilik}
-
+*Nama Penggadai:* ${unit.nama_pemilik}
+${unit.nik ? `*NIK:* ${unit.nik}\n` : ''}${unit.alamat ? `*Alamat:* ${unit.alamat}\n` : ''}
 *DETAIL KENDARAAN:*
 - Jenis Motor: ${unit.jenis_motor} (${unit.tahun})
 - Nopol: ${unit.nopol}
@@ -47,7 +47,11 @@ Kepada Yth.
 *(Nominal Pokok + Jasa Parkir Belum Bayar)*
 ================================
 
-*Status Unit:* ${unit.display_status.toUpperCase()}`;
+*Status Unit:* ${unit.display_status.toUpperCase()}
+
+segera lakukan pembayaran ke
+BCA 2410037249
+a/n Badru Tammam`;
 
   return text;
 }

@@ -47,11 +47,19 @@
         },
         "nama_pemilik": {
           "type": "string",
-          "description": "Nama pemilik kendaraan (huruf besar semua)"
+          "description": "Nama penggadai kendaraan (huruf besar semua)"
+        },
+        "nik": {
+          "type": "string",
+          "description": "Nomor Induk Kependudukan (NIK KTP) penggadai"
+        },
+        "alamat": {
+          "type": "string",
+          "description": "Alamat tempat tinggal penggadai"
         },
         "no_whatsapp": {
           "type": "string",
-          "description": "Nomor WhatsApp pemilik"
+          "description": "Nomor WhatsApp penggadai"
         },
         "tahun": {
           "type": "number",
@@ -96,12 +104,52 @@
         }
       },
       "required": ["id", "tanggal_masuk", "jenis_motor", "nama_pemilik", "nopol", "status"]
+    },
+    "Penggadai": {
+      "title": "Penggadai",
+      "description": "Master data identitas nasabah penggadai yang tersimpan permanen di database",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifier unik penggadai"
+        },
+        "nama": {
+          "type": "string",
+          "description": "Nama lengkap penggadai (huruf besar semua)"
+        },
+        "nik": {
+          "type": "string",
+          "description": "Nomor Induk Kependudukan (NIK KTP)"
+        },
+        "alamat": {
+          "type": "string",
+          "description": "Alamat tempat tinggal penggadai"
+        },
+        "no_whatsapp": {
+          "type": "string",
+          "description": "Nomor WhatsApp penggadai"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Waktu pendaftaran penggadai"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Waktu pembaruan penggadai"
+        }
+      },
+      "required": ["id", "nama", "nik"]
     }
   },
   "firestore": {
     "/units/{unitId}": {
       "schema": "MotorUnit",
       "description": "Koleksi data unit motor titipan dan gadai tersinkronisasi real-time"
+    },
+    "/penggadai/{penggadaiId}": {
+      "schema": "Penggadai",
+      "description": "Koleksi data master penggadai yang tersimpan permanen meskipun unit telah lunas dan dihapus"
     },
     "/deleted_units/{unitId}": {
       "description": "Koleksi ID unit motor yang telah dihapus permanen agar tidak muncul kembali"

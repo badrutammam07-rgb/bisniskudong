@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MotorUnit, ComputedMotorUnit, StatusFilter, TempoFilter, PaymentEntry } from './types/motor';
-import { loadUnits, saveUnits, markUnitDeletedLocally } from './utils/storage';
+import { MotorUnit, ComputedMotorUnit, StatusFilter, TempoFilter, PaymentEntry, Penggadai } from './types/motor';
+import { loadUnits, saveUnits, markUnitDeletedLocally, loadPenggadai } from './utils/storage';
 import { computeUnit } from './utils/calculations';
 import { Header } from './components/Header';
 import { SummaryCards } from './components/SummaryCards';
@@ -12,6 +12,7 @@ import { PaymentModal } from './components/PaymentModal';
 import { ReceiptModal } from './components/ReceiptModal';
 import { ConfirmLunasModal } from './components/ConfirmLunasModal';
 import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
+import { PenggadaiModal } from './components/PenggadaiModal';
 import { playLuxuryChime, triggerDeviceNotification } from './utils/sound';
 import {
   subscribeUnits,
@@ -22,9 +23,11 @@ import {
   forceRefreshUnitsFromFirestore,
   SyncStatus,
 } from './firebase/units';
+import { subscribePenggadai, upsertPenggadaiToFirestore } from './firebase/penggadai';
 
 export default function App() {
   const [units, setUnits] = useState<MotorUnit[]>(() => loadUnits());
+  const [penggadaiList, setPenggadaiList] = useState<Penggadai[]>(() => loadPenggadai());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('aktif');
   const [tempoFilter, setTempoFilter] = useState<TempoFilter>('semua');
   const [selectedPemilikDana, setSelectedPemilikDana] = useState<string>('all');
@@ -34,6 +37,8 @@ export default function App() {
 
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isPenggadaiModalOpen, setIsPenggadaiModalOpen] = useState(false);
+  const [preselectedPenggadai, setPreselectedPenggadai] = useState<Penggadai | null>(null);
   const [editingUnit, setEditingUnit] = useState<MotorUnit | null>(null);
   const [paymentUnit, setPaymentUnit] = useState<ComputedMotorUnit | null>(null);
   const [receiptUnit, setReceiptUnit] = useState<ComputedMotorUnit | null>(null);
@@ -58,7 +63,7 @@ export default function App() {
 
   // Subscribe to real-time updates from Firebase Firestore across all devices
   useEffect(() => {
-    const unsubscribe = subscribeUnits(
+    const unsubUnits = subscribeUnits(
       (remoteUnits) => {
         setUnits(remoteUnits);
       },
@@ -70,7 +75,14 @@ export default function App() {
       }
     );
 
-    return () => unsubscribe();
+    const unsubPenggadai = subscribePenggadai((remotePenggadai) => {
+      setPenggadaiList(remotePenggadai);
+    });
+
+    return () => {
+      unsubUnits();
+      unsubPenggadai();
+    };
   }, []);
 
   // Tangani saat aplikasi dibuka kembali (misal buka tab baru / unlock layar ponsel)
@@ -227,7 +239,12 @@ export default function App() {
     <div className="min-h-screen flex flex-col text-slate-100">
       {/* Luxury Top Bar Header with live cloud sync badge and audio controls */}
       <Header
-        onOpenAddModal={() => setIsAddOpen(true)}
+        onOpenAddModal={() => {
+          setPreselectedPenggadai(null);
+          setIsAddOpen(true);
+        }}
+        onOpenPenggadaiModal={() => setIsPenggadaiModalOpen(true)}
+        totalPenggadai={penggadaiList.length}
         totalActiveUnits={totalActiveUnits}
         totalDueAlerts={totalDueAlerts}
         soundEnabled={soundEnabled}
@@ -283,9 +300,14 @@ export default function App() {
       {/* Modals */}
       <AddUnitModal
         isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
+        onClose={() => {
+          setIsAddOpen(false);
+          setPreselectedPenggadai(null);
+        }}
         onAddUnit={handleAddUnit}
         existingCount={units.length}
+        penggadaiList={penggadaiList}
+        preselectedPenggadai={preselectedPenggadai}
       />
 
       <EditUnitModal
@@ -320,6 +342,20 @@ export default function App() {
         unit={deleteTargetUnit}
         onClose={() => setDeleteTargetUnit(null)}
         onConfirmDelete={handleDeleteUnit}
+      />
+
+      <PenggadaiModal
+        isOpen={isPenggadaiModalOpen}
+        onClose={() => setIsPenggadaiModalOpen(false)}
+        penggadaiList={penggadaiList}
+        units={computedUnits}
+        onSelectForNewPawn={(p) => {
+          setPreselectedPenggadai(p);
+          setIsAddOpen(true);
+        }}
+        onSavePenggadai={async (p) => {
+          await upsertPenggadaiToFirestore(p);
+        }}
       />
     </div>
   );

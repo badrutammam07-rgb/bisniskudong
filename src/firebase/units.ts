@@ -215,8 +215,11 @@ export function subscribeUnits(
   };
 }
 
+import { upsertPenggadaiToFirestore } from './penggadai';
+
 /**
  * Tambah unit baru ke Firestore (tersinkron ke seluruh perangkat secara realtime)
+ * Sekaligus mencatat master data Penggadai (nama, NIK, alamat, WA) agar tersimpan permanen
  */
 export async function addUnitToFirestore(unit: MotorUnit): Promise<void> {
   const clean = sanitizeUnit(unit);
@@ -225,6 +228,16 @@ export async function addUnitToFirestore(unit: MotorUnit): Promise<void> {
     await setDoc(docRef, clean);
     await setDoc(doc(db, METADATA_PATH, 'app_state'), { initialized: true }, { merge: true });
     localStorage.setItem('motorku_db_initialized', 'true');
+
+    // Simpan permanen data penggadai di database penggadai
+    if (clean.nama_pemilik) {
+      upsertPenggadaiToFirestore({
+        nama: clean.nama_pemilik,
+        nik: clean.nik || '',
+        alamat: clean.alamat || '',
+        no_whatsapp: clean.no_whatsapp || '',
+      }).catch((e) => console.warn('Penggadai sync notice:', e));
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, `${COLLECTION_PATH}/${clean.id}`);
     throw error;
@@ -239,6 +252,16 @@ export async function updateUnitInFirestore(unit: MotorUnit): Promise<void> {
   const docRef = doc(db, COLLECTION_PATH, clean.id);
   try {
     await setDoc(docRef, clean, { merge: true });
+
+    // Perbarui data penggadai jika nama atau NIK tersedia
+    if (clean.nama_pemilik) {
+      upsertPenggadaiToFirestore({
+        nama: clean.nama_pemilik,
+        nik: clean.nik || '',
+        alamat: clean.alamat || '',
+        no_whatsapp: clean.no_whatsapp || '',
+      }).catch((e) => console.warn('Penggadai sync notice:', e));
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION_PATH}/${clean.id}`);
     throw error;

@@ -1,10 +1,11 @@
-import React from 'react';
-import { Plus, Bell, Volume2, Cloud, RefreshCw, CloudOff } from 'lucide-react';
+import { Plus, Bell, Volume2, Cloud, RefreshCw, CloudOff, User } from 'lucide-react';
 import { playLuxuryChime } from '../utils/sound';
 import { SyncStatus } from '../firebase/units';
 
 interface HeaderProps {
   onOpenAddModal: () => void;
+  onOpenPenggadaiModal?: () => void;
+  totalPenggadai?: number;
   totalActiveUnits: number;
   totalDueAlerts: number;
   soundEnabled: boolean;
@@ -16,6 +17,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenAddModal,
+  onOpenPenggadaiModal,
+  totalPenggadai = 0,
   totalActiveUnits,
   totalDueAlerts,
   soundEnabled,
@@ -100,7 +103,17 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Zone 2: Navigation & Sync Refresh / Sound Controls */}
-          <nav className="hidden md:flex items-center gap-3 text-xs font-medium text-slate-300">
+          <nav className="hidden md:flex items-center gap-2.5 text-xs font-medium text-slate-300">
+            {/* Penggadai Directory Button */}
+            <button
+              onClick={onOpenPenggadaiModal}
+              title="Buka direktori data master penggadai terdaftar"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/40 rounded-lg text-slate-200 transition-all cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5 text-amber-400" />
+              <span>Data Penggadai ({totalPenggadai})</span>
+            </button>
+
             {/* Manual Sync Refresh Button */}
             <button
               onClick={onRefresh}
@@ -109,34 +122,43 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/40 rounded-lg text-slate-200 transition-all cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Memperbarui...' : 'Segarkan Data'}</span>
+              <span>{isRefreshing ? 'Memperbarui...' : 'Segarkan'}</span>
             </button>
 
             <button
               onClick={handleTestChime}
               title="Klik untuk menguji bunyi notifikasi bel di perangkat"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/40 rounded-lg text-slate-200 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/40 rounded-lg text-slate-200 transition-all cursor-pointer"
             >
               <Bell className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>Tes Bunyi</span>
+              <span>Tes Bel</span>
             </button>
 
             <button
               onClick={onToggleSound}
               title="Aktifkan / Matikan suara notifikasi otomatis"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
                 soundEnabled
                   ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
                   : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
               <Volume2 className="w-3.5 h-3.5" />
-              <span>Suara: {soundEnabled ? 'Aktif' : 'Mute'}</span>
+              <span>{soundEnabled ? 'Suara' : 'Mute'}</span>
             </button>
           </nav>
 
           {/* Zone 3: Primary Action & Mobile Quick Sync/Audio */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Mobile Penggadai Directory Button */}
+            <button
+              onClick={onOpenPenggadaiModal}
+              title="Direktori Data Penggadai"
+              className="md:hidden p-1.5 sm:p-2 text-amber-400 bg-slate-900 border border-slate-700 hover:border-amber-500/40 rounded-lg cursor-pointer"
+            >
+              <User className="w-4 h-4" />
+            </button>
+
             {/* Mobile Refresh Button */}
             <button
               onClick={onRefresh}

@@ -10,6 +10,11 @@ service cloud.firestore {
       allow write: if isValidId(unitId);
     }
 
+    match /penggadai/{penggadaiId} {
+      allow read: if true;
+      allow write: if isValidId(penggadaiId);
+    }
+
     match /deleted_units/{unitId} {
       allow read: if true;
       allow write: if isValidId(unitId);
