@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MotorUnit, ComputedMotorUnit, StatusFilter, TempoFilter, PaymentEntry, Penggadai } from './types/motor';
-import { loadUnits, saveUnits, markUnitDeletedLocally, loadPenggadai } from './utils/storage';
+import { loadUnits, saveUnits, markUnitDeletedLocally, loadPenggadai, deletePenggadaiLocal } from './utils/storage';
 import { computeUnit } from './utils/calculations';
 import { Header } from './components/Header';
 import { SummaryCards } from './components/SummaryCards';
@@ -23,7 +23,7 @@ import {
   forceRefreshUnitsFromFirestore,
   SyncStatus,
 } from './firebase/units';
-import { subscribePenggadai, upsertPenggadaiToFirestore } from './firebase/penggadai';
+import { subscribePenggadai, upsertPenggadaiToFirestore, deletePenggadaiFromFirestore } from './firebase/penggadai';
 
 export default function App() {
   const [units, setUnits] = useState<MotorUnit[]>(() => loadUnits());
@@ -315,6 +315,7 @@ export default function App() {
         unit={editingUnit}
         onClose={() => setEditingUnit(null)}
         onUpdateUnit={handleUpdateUnit}
+        penggadaiList={penggadaiList}
       />
 
       <PaymentModal
@@ -355,6 +356,11 @@ export default function App() {
         }}
         onSavePenggadai={async (p) => {
           await upsertPenggadaiToFirestore(p);
+        }}
+        onDeletePenggadai={async (penggadaiId) => {
+          await deletePenggadaiFromFirestore(penggadaiId);
+          deletePenggadaiLocal(penggadaiId);
+          setPenggadaiList((prev) => prev.filter((p) => p.id !== penggadaiId));
         }}
       />
     </div>

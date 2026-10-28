@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { MotorUnit, PemilikDana, UnitStatus } from '../types/motor';
-import { X, Calendar, User, Phone, FileText, DollarSign, CreditCard, MapPin } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { MotorUnit, PemilikDana, UnitStatus, Penggadai } from '../types/motor';
+import { X, Calendar, User, Phone, FileText, DollarSign, CreditCard, MapPin, Sparkles, Search, CheckCircle2 } from 'lucide-react';
 import { formatNominalInput, parseNominalInput } from '../utils/calculations';
 
 interface EditUnitModalProps {
@@ -8,6 +8,7 @@ interface EditUnitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdateUnit: (updated: MotorUnit) => void;
+  penggadaiList?: Penggadai[];
 }
 
 export const EditUnitModal: React.FC<EditUnitModalProps> = ({
@@ -15,6 +16,7 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
   isOpen,
   onClose,
   onUpdateUnit,
+  penggadaiList = [],
 }) => {
   const [tanggalMasuk, setTanggalMasuk] = useState('');
   const [jenisMotor, setJenisMotor] = useState('');
@@ -32,6 +34,27 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
   const [isCustomPemilik, setIsCustomPemilik] = useState(false);
   const [status, setStatus] = useState<UnitStatus>('Parkir');
   const [catatan, setCatatan] = useState('');
+  const [searchPenggadaiQuery, setSearchPenggadaiQuery] = useState('');
+
+  // Filter daftar penggadai terdaftar agar bisa di-scroll down
+  const filteredExistingPenggadai = useMemo(() => {
+    if (!searchPenggadaiQuery.trim()) return penggadaiList;
+    const q = searchPenggadaiQuery.toLowerCase();
+    return penggadaiList.filter((p) => {
+      const matchNama = (p.nama || '').toLowerCase().includes(q);
+      const matchNik = (p.nik || '').toLowerCase().includes(q);
+      const matchWa = (p.no_whatsapp || '').toLowerCase().includes(q);
+      const matchAlamat = (p.alamat || '').toLowerCase().includes(q);
+      return matchNama || matchNik || matchWa || matchAlamat;
+    });
+  }, [penggadaiList, searchPenggadaiQuery]);
+
+  const applyPenggadai = (p: Penggadai) => {
+    setNamaPemilik(p.nama.toUpperCase());
+    setNik(p.nik || '');
+    setAlamat(p.alamat || '');
+    setNoWhatsapp(p.no_whatsapp || '');
+  };
 
   useEffect(() => {
     if (unit) {
@@ -159,10 +182,88 @@ export const EditUnitModal: React.FC<EditUnitModalProps> = ({
 
           {/* Baris 2: Data Penggadai (Nama, NIK, Alamat, WA) */}
           <div className="p-4 bg-slate-900/80 border border-slate-700/80 rounded-xl space-y-3.5">
-            <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5 border-b border-slate-800 pb-2">
-              <User className="w-4 h-4 text-amber-400" />
-              <span>Identitas Penggadai</span>
+            <div className="text-xs font-bold text-amber-300 flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center gap-1.5">
+                <User className="w-4 h-4 text-amber-400" />
+                <span>Identitas Penggadai</span>
+              </div>
+              {penggadaiList.length > 0 && (
+                <span className="text-[11px] text-slate-400 font-normal">
+                  {penggadaiList.length} Penggadai Tersimpan
+                </span>
+              )}
             </div>
+
+            {/* Quick Picker dari Penggadai Terdaftar dengan Scroll Down */}
+            {penggadaiList.length > 0 && (
+              <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 space-y-2.5">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Perbarui dari Data Penggadai Tersimpan (Dropdown / Scroll Down):</span>
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      const found = penggadaiList.find((p) => p.id === e.target.value);
+                      if (found) applyPenggadai(found);
+                    }}
+                    className="w-full px-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-medium cursor-pointer"
+                  >
+                    <option value="">-- Scroll down untuk memilih data penggadai tersimpan ({penggadaiList.length} orang) --</option>
+                    {penggadaiList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama} {p.nik ? `| NIK: ${p.nik}` : ''} {p.no_whatsapp ? `| WA: ${p.no_whatsapp}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-1.5 border-t border-slate-800/80 space-y-1.5">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchPenggadaiQuery}
+                      onChange={(e) => setSearchPenggadaiQuery(e.target.value)}
+                      placeholder="Cari nama / NIK penggadai tersimpan..."
+                      className="w-full pl-8 pr-3 py-1 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:ring-1 focus:ring-amber-400 outline-hidden"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2 pointer-events-none" />
+                  </div>
+
+                  <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900/80 divide-y divide-slate-800/80">
+                    {filteredExistingPenggadai.map((p) => {
+                      const isMatch = (namaPemilik || '').trim() === p.nama.trim();
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => applyPenggadai(p)}
+                          className={`w-full p-2 text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                            isMatch
+                              ? 'bg-amber-400/20 text-amber-200 font-bold border-l-2 border-amber-400'
+                              : 'hover:bg-slate-800/70 text-slate-300'
+                          }`}
+                        >
+                          <div className="min-w-0 pr-2">
+                            <span className="font-semibold text-slate-100">{p.nama}</span>
+                            <div className="text-[10px] text-slate-400 truncate">
+                              {p.nik ? `NIK: ${p.nik}` : ''} {p.no_whatsapp ? `• WA: ${p.no_whatsapp}` : ''} {p.alamat ? `• ${p.alamat}` : ''}
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-medium shrink-0 ${
+                              isMatch ? 'bg-amber-400 text-slate-950 font-bold' : 'text-amber-400 border border-amber-500/30'
+                            }`}
+                          >
+                            {isMatch ? 'Dipakai' : 'Gunakan'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>

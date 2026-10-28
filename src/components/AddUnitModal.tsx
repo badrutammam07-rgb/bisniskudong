@@ -79,15 +79,16 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
     setSearchPenggadaiQuery('');
   };
 
-  // Filter daftar penggadai terdaftar untuk autocomplete / pencarian cepat
+  // Filter daftar penggadai terdaftar (tampilkan semua agar bisa di-scroll down)
   const filteredExistingPenggadai = useMemo(() => {
-    if (!searchPenggadaiQuery.trim()) return penggadaiList.slice(0, 6);
+    if (!searchPenggadaiQuery.trim()) return penggadaiList;
     const q = searchPenggadaiQuery.toLowerCase();
     return penggadaiList.filter((p) => {
       const matchNama = (p.nama || '').toLowerCase().includes(q);
       const matchNik = (p.nik || '').toLowerCase().includes(q);
       const matchWa = (p.no_whatsapp || '').toLowerCase().includes(q);
-      return matchNama || matchNik || matchWa;
+      const matchAlamat = (p.alamat || '').toLowerCase().includes(q);
+      return matchNama || matchNik || matchWa || matchAlamat;
     });
   }, [penggadaiList, searchPenggadaiQuery]);
 
@@ -183,57 +184,107 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({
               )}
             </div>
 
-            {/* Quick Picker dari Penggadai Terdaftar */}
+            {/* Quick Picker dari Penggadai Terdaftar dengan Scroll Down */}
             {penggadaiList.length > 0 && (
-              <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Pilih Penggadai Terdaftar (Otomatis Isi Data)</span>
-                  </label>
-                  {isAutoFilled && (
-                    <button
-                      type="button"
-                      onClick={resetPenggadaiFields}
-                      className="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
-                    >
-                      + Input Penggadai Baru
-                    </button>
-                  )}
-                </div>
-
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchPenggadaiQuery}
-                    onChange={(e) => setSearchPenggadaiQuery(e.target.value)}
-                    placeholder="Ketik Nama / NIK / No. WA untuk cari penggadai lama..."
-                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:ring-1 focus:ring-amber-400 outline-hidden"
-                  />
-                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2 pointer-events-none" />
-                </div>
-
-                {/* Chips pilihan cepat penggadai */}
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
-                  {filteredExistingPenggadai.map((p) => {
-                    const isSelected = selectedPenggadaiId === p.id;
-                    return (
+              <div className="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800 space-y-3">
+                {/* 1. Menu Dropdown Select (Native Scroll Down) */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Pilih Penggadai Terdaftar (Dropdown / Scroll Down)</span>
+                    </label>
+                    {isAutoFilled && (
                       <button
-                        key={p.id}
                         type="button"
-                        onClick={() => applyPenggadai(p)}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all text-left flex items-center gap-1.5 cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-400 text-slate-950 font-bold shadow-sm'
-                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 hover:border-amber-500/40'
-                        }`}
+                        onClick={resetPenggadaiFields}
+                        className="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
                       >
-                        {isSelected && <CheckCircle2 className="w-3 h-3 text-slate-950" />}
-                        <span>{p.nama}</span>
-                        {p.nik && <span className="text-[10px] opacity-70">({p.nik.slice(-4)})</span>}
+                        + Input Penggadai Baru
                       </button>
-                    );
-                  })}
+                    )}
+                  </div>
+                  <select
+                    value={selectedPenggadaiId}
+                    onChange={(e) => {
+                      const found = penggadaiList.find((p) => p.id === e.target.value);
+                      if (found) applyPenggadai(found);
+                      else resetPenggadaiFields();
+                    }}
+                    className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:ring-2 focus:ring-amber-400 outline-hidden font-medium cursor-pointer"
+                  >
+                    <option value="">-- Scroll down untuk memilih penggadai ({penggadaiList.length} orang terdaftar) --</option>
+                    {penggadaiList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nama} {p.nik ? `| NIK: ${p.nik}` : ''} {p.no_whatsapp ? `| WA: ${p.no_whatsapp}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 2. Daftar List dengan Scroll Down Vertikal */}
+                <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      Daftar Nama yang Sudah Terinput (Bisa Scroll Down):
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono-numbers">
+                      {filteredExistingPenggadai.length} Penggadai
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchPenggadaiQuery}
+                      onChange={(e) => setSearchPenggadaiQuery(e.target.value)}
+                      placeholder="Ketik untuk menyaring nama / NIK / No. WA..."
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:ring-1 focus:ring-amber-400 outline-hidden"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2 pointer-events-none" />
+                  </div>
+
+                  {/* Container List yang bisa di-scroll down */}
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900/80 divide-y divide-slate-800/80">
+                    {filteredExistingPenggadai.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-slate-500">
+                        Tidak ada penggadai yang cocok dengan "{searchPenggadaiQuery}"
+                      </div>
+                    ) : (
+                      filteredExistingPenggadai.map((p) => {
+                        const isSelected = selectedPenggadaiId === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => applyPenggadai(p)}
+                            className={`w-full p-2.5 text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-amber-400/20 text-amber-200 font-bold border-l-2 border-amber-400'
+                                : 'hover:bg-slate-800/70 text-slate-300'
+                            }`}
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5">
+                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                                <span className="font-semibold text-slate-100">{p.nama}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                                {p.nik ? `NIK: ${p.nik}` : ''} {p.no_whatsapp ? `• WA: ${p.no_whatsapp}` : ''} {p.alamat ? `• ${p.alamat}` : ''}
+                              </div>
+                            </div>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded font-medium shrink-0 ${
+                                isSelected ? 'bg-amber-400 text-slate-950 font-bold' : 'text-amber-400 border border-amber-500/30'
+                              }`}
+                            >
+                              {isSelected ? 'Terpilih' : 'Pilih'}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             )}

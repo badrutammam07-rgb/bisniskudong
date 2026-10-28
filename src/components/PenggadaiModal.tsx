@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Penggadai, ComputedMotorUnit } from '../types/motor';
-import { X, User, Phone, MapPin, CreditCard, Search, Plus, Bike, ExternalLink, ShieldCheck, Check } from 'lucide-react';
+import { X, User, Phone, MapPin, CreditCard, Search, Plus, Bike, ExternalLink, ShieldCheck, Check, Trash2 } from 'lucide-react';
 
 interface PenggadaiModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface PenggadaiModalProps {
   units: ComputedMotorUnit[];
   onSelectForNewPawn: (penggadai: Penggadai) => void;
   onSavePenggadai: (penggadai: Partial<Penggadai> & { nama: string }) => Promise<void>;
+  onDeletePenggadai: (penggadaiId: string) => Promise<void>;
 }
 
 export const PenggadaiModal: React.FC<PenggadaiModalProps> = ({
@@ -18,10 +19,22 @@ export const PenggadaiModal: React.FC<PenggadaiModalProps> = ({
   units,
   onSelectForNewPawn,
   onSavePenggadai,
+  onDeletePenggadai,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const handleDelete = async (p: Penggadai) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus data penggadai "${p.nama}" dari direktori kontak?`)) {
+      try {
+        await onDeletePenggadai(p.id);
+      } catch (err) {
+        console.error('Gagal menghapus penggadai:', err);
+        alert('Gagal menghapus data penggadai dari database.');
+      }
+    }
+  };
 
   // Form state
   const [nama, setNama] = useState('');
@@ -304,8 +317,8 @@ export const PenggadaiModal: React.FC<PenggadaiModalProps> = ({
                       )}
                     </div>
 
-                    {/* Actions: Gadaikan Unit Baru & Edit */}
-                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    {/* Actions: Gadaikan Unit Baru, Edit & Hapus */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-center shrink-0">
                       <button
                         type="button"
                         onClick={() => handleStartEdit(p)}
@@ -313,6 +326,15 @@ export const PenggadaiModal: React.FC<PenggadaiModalProps> = ({
                         title="Edit data identitas penggadai"
                       >
                         Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(p)}
+                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                        title="Hapus kontak penggadai ini dari direktori"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
 
                       <button

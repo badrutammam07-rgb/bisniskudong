@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   setDoc,
+  deleteDoc,
   onSnapshot,
   getDocs,
   Unsubscribe,
@@ -125,5 +126,17 @@ export async function fetchPenggadaiDirect(): Promise<Penggadai[]> {
   } catch (err) {
     console.warn('Gagal mengambil penggadai langsung:', err);
     return [];
+  }
+}
+
+/**
+ * Hapus kontak/data penggadai dari database Firestore dan cache lokal
+ */
+export async function deletePenggadaiFromFirestore(penggadaiId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, PENGGADAI_COLLECTION, penggadaiId));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, `${PENGGADAI_COLLECTION}/${penggadaiId}`);
+    throw err;
   }
 }

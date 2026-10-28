@@ -373,3 +373,13 @@ export function savePenggadai(list: Penggadai[]): void {
     console.warn('Gagal menyimpan data penggadai lokal:', err);
   }
 }
+
+export function deletePenggadaiLocal(id: string): void {
+  try {
+    const list = loadPenggadai();
+    const filtered = list.filter((p) => p.id !== id);
+    savePenggadai(filtered);
+  } catch (err) {
+    console.warn('Gagal menghapus data penggadai lokal:', err);
+  }
+}
