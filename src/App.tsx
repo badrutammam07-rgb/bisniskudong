@@ -329,6 +329,16 @@ export default function App() {
         isOpen={!!activeReceiptUnit}
         unit={activeReceiptUnit}
         onClose={() => setReceiptUnit(null)}
+        onUpdatePhone={async (unitId, newPhone) => {
+          const target = units.find((u) => u.id === unitId);
+          if (target) {
+            await handleUpdateUnit({
+              ...target,
+              no_whatsapp: newPhone,
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }}
       />
 
       <ConfirmLunasModal
